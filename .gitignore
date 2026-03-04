@@ -1,0 +1,10 @@
+node_modules
+dist
+.vscode
+.DS_Store
+*.log
+.env
+db.json.bak
+index.html.source
+acceso-qr.html
+web.config

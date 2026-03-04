@@ -9,14 +9,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// db.json should be at the root, so it is at ../db.json relative to api/index.js
+const DB_PATH = path.join(__dirname, '..', 'db.json');
 const PORT = process.env.PORT || 3001;
-const DB_PATH = path.join(__dirname, 'db.json');
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from the build directory (for IIS deployment)
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files from the build directory (for local usage)
+app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 // Helper to read DB
 const readDB = () => {
@@ -35,6 +36,7 @@ const readDB = () => {
 // Helper to write DB
 const writeDB = (data) => {
     try {
+        // NOTE: This will fail on Vercel production due to read-only filesystem
         fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
     } catch (error) {
@@ -45,20 +47,7 @@ const writeDB = (data) => {
 
 // Routes
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', time: new Date().toISOString(), port: PORT, env: process.env.NODE_ENV });
-});
-
-app.get('/api/debug', (req, res) => {
-    const dbExists = fs.existsSync(DB_PATH);
-    const dbSize = dbExists ? fs.statSync(DB_PATH).size : 0;
-    res.json({
-        dbPath: DB_PATH,
-        dbExists,
-        dbSize,
-        cwd: process.cwd(),
-        dirname: __dirname,
-        user: process.env.USERNAME || 'unknown'
-    });
+    res.json({ status: 'ok', time: new Date().toISOString(), env: process.env.NODE_ENV });
 });
 
 app.get('/api/initiatives', (req, res) => {
@@ -83,15 +72,24 @@ app.post('/api/initiatives', (req, res) => {
     if (success) {
         res.json({ success: true });
     } else {
-        res.status(500).json({ error: 'Failed to save data' });
+        res.status(500).json({ error: 'Failed to save data. On Vercel, use a real database for persistence.' });
     }
 });
 
-// Fallback to index.html for SPA routing
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// For local development fallback
+app.use((req, res, next) => {
+    const distPath = path.join(__dirname, '..', 'dist', 'index.html');
+    if (fs.existsSync(distPath)) {
+        res.sendFile(distPath);
+    } else {
+        next();
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Local server running on http://localhost:${PORT}`);
+    });
+}
+
+export default app;

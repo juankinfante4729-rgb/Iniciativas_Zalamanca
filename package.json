@@ -10,6 +10,7 @@
     "server": "node api/index.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Initiative, Priority } from '../types';
 import { Icon } from './Icon';
-import { X, Calendar, DollarSign, AlertCircle, Trash2 } from 'lucide-react';
+import { X, Calendar, DollarSign, AlertCircle, Trash2, Layout, Plus, Upload, Image as ImageIcon, Tag } from 'lucide-react';
 
 interface Props {
   initiative: Initiative | null;
@@ -19,6 +19,9 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
   const [tempCategory, setTempCategory] = React.useState<Initiative['category']>('Infraestructura');
   const [tempDescription, setTempDescription] = React.useState('');
   const [tempTitle, setTempTitle] = React.useState('');
+  const [tempImageUrl, setTempImageUrl] = React.useState('');
+  const [tempSubInitiatives, setTempSubInitiatives] = React.useState<any[]>([]);
+  const [tempResponsable, setTempResponsable] = React.useState<Initiative['responsable']>('Administración');
 
   React.useEffect(() => {
     if (initiative) {
@@ -28,21 +31,81 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
       setTempCategory(initiative.category);
       setTempDescription(initiative.fullDescription);
       setTempTitle(initiative.title);
+      setTempImageUrl(initiative.imageUrl);
+      setTempSubInitiatives(initiative.subInitiatives || []);
+      setTempResponsable(initiative.responsable || 'Administración');
       setIsEditing(false);
     }
   }, [initiative]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addSubInitiative = () => {
+    const newSub = {
+      id: Date.now().toString(),
+      title: '',
+      description: '',
+      budget: 0,
+      timeline: '',
+      priority: 'Media' as Priority,
+      category: 'Infraestructura' as Initiative['category'],
+      imageUrl: 'https://images.unsplash.com/photo-1541888081622-1d5e5b3b1238?auto=format&fit=crop&w=800&q=80'
+    };
+    setTempSubInitiatives([...tempSubInitiatives, newSub]);
+  };
+
+  const handleSubInitiativeImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateSubInitiative(id, 'imageUrl', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const updateSubInitiative = (id: string, field: string, value: any) => {
+    setTempSubInitiatives(tempSubInitiatives.map(sub => 
+      sub.id === id ? { ...sub, [field]: value } : sub
+    ));
+  };
+
+  const removeSubInitiative = (id: string) => {
+    setTempSubInitiatives(tempSubInitiatives.filter(sub => sub.id !== id));
+  };
+
   if (!initiative) return null;
+
+  const hasSubInitiatives = tempSubInitiatives && tempSubInitiatives.length > 0;
+  const derivedBudget = hasSubInitiatives
+    ? tempSubInitiatives.reduce((acc, sub) => acc + (Number(sub.budget) || 0), 0)
+    : tempBudget;
+  const derivedTimeline = hasSubInitiatives
+    ? tempSubInitiatives[tempSubInitiatives.length - 1].timeline
+    : tempTimeline;
 
   const handleSave = () => {
     onUpdate({
       ...initiative,
       title: tempTitle,
       priority: tempPriority,
-      timeline: tempTimeline,
-      budget: tempBudget,
+      timeline: derivedTimeline,
+      budget: derivedBudget,
       category: tempCategory,
-      fullDescription: tempDescription
+      fullDescription: tempDescription,
+      imageUrl: tempImageUrl,
+      subInitiatives: tempSubInitiatives,
+      responsable: tempResponsable
     });
     setIsEditing(false);
   };
@@ -67,11 +130,20 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
             {/* Header Image */}
             <div className="h-48 md:h-64 w-full relative shrink-0">
               <img
-                src={initiative.imageUrl}
+                src={isEditing ? tempImageUrl : initiative.imageUrl}
                 alt={initiative.title}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {isEditing && (
+                 <div className="absolute top-4 left-4">
+                    <label className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer shadow-lg">
+                        <Upload size={14} />
+                        Cambiar Portada
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </label>
+                 </div>
+              )}
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors border border-white/10"
@@ -79,7 +151,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                 <X size={20} />
               </button>
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md border border-white/30`}>
                     {isEditing ? tempCategory : initiative.category}
                   </span>
@@ -91,6 +163,10 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                       {initiative.priority}
                     </span>
                   )}
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/80 text-white backdrop-blur-md border border-white/30`}>
+                    <Layout size={12} />
+                    {isEditing ? tempResponsable : (initiative.responsable || 'Administración')}
+                  </span>
                 </div>
                 {isEditing ? (
                   <input
@@ -124,50 +200,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className={`p-5 rounded-xl border flex flex-col justify-between transition-colors ${isEditing ? 'bg-yellow-50 border-yellow-200' : 'bg-emerald-50/50 border-emerald-100'}`}>
-                    <div className={`flex items-center gap-2 mb-2 ${isEditing ? 'text-yellow-700' : 'text-emerald-600'}`}>
-                      <DollarSign size={20} />
-                      <span className="text-xs font-bold uppercase tracking-wider">Presupuesto Estimado</span>
-                    </div>
-                    <div>
-                      {isEditing ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xl font-bold text-slate-900">$</span>
-                          <input
-                            type="number"
-                            value={tempBudget}
-                            onChange={(e) => setTempBudget(parseInt(e.target.value) || 0)}
-                            className="w-full bg-white border border-yellow-300 rounded-lg px-3 py-1.5 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-yellow-500/20"
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-3xl font-bold text-emerald-900 tracking-tight">${initiative.budget.toLocaleString()}</p>
-                      )}
-                      <p className="text-xs text-emerald-600/80 mt-1 font-medium">Cotización local (Quito, EC)</p>
-                    </div>
-                  </div>
 
-                  <div className={`p-5 rounded-xl border flex flex-col justify-between transition-colors ${isEditing ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50/50 border-blue-100'}`}>
-                    <div className={`flex items-center gap-2 mb-2 ${isEditing ? 'text-yellow-700' : 'text-blue-600'}`}>
-                      <Calendar size={20} />
-                      <span className="text-xs font-bold uppercase tracking-wider">Implementación</span>
-                    </div>
-                    <div>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={tempTimeline}
-                          onChange={(e) => setTempTimeline(e.target.value)}
-                          className="w-full bg-white border border-yellow-300 rounded-lg px-3 py-1.5 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-yellow-500/20"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold text-blue-900">{initiative.timeline}</p>
-                      )}
-                      <p className="text-xs text-blue-600/80 mt-1 font-medium">Fecha estimada</p>
-                    </div>
-                  </div>
-                </div>
 
                 {isEditing && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -201,8 +234,166 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                         ))}
                       </div>
                     </div>
+
+                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 sm:col-span-2">
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Responsable</h3>
+                      <select
+                        value={tempResponsable}
+                        onChange={(e) => setTempResponsable(e.target.value as any)}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 shadow-sm"
+                      >
+                        {['Administración', 'Presidente', 'Coordinador Etapa 1', 'Coordinador Etapa 2', 'Coordinador Etapa 3', 'Coordinador Etapa 4'].map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
+
+                {/* Sub-initiatives Section */}
+                <div>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <Layout size={14} /> Sub-iniciativas
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={addSubInitiative}
+                          className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors"
+                        >
+                          <Plus size={14} /> Añadir Sub-iniciativa
+                        </button>
+                      )}
+                  </h3>
+
+                  {isEditing ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {tempSubInitiatives.length === 0 && (
+                            <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">No hay fases o sub-iniciativas asociadas.</div>
+                        )}
+                        {tempSubInitiatives.map((sub, index) => (
+                          <div key={sub.id} className="bg-yellow-50/50 rounded-2xl border border-yellow-200 shadow-sm overflow-hidden relative group hover:shadow-md transition-shadow flex flex-col">
+                              <button
+                                  type="button"
+                                  onClick={() => removeSubInitiative(sub.id)}
+                                  className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm text-slate-700 hover:text-red-500 hover:bg-white transition-all p-2 rounded-full z-10 shadow-sm"
+                                  title="Eliminar Sub-iniciativa"
+                              >
+                                  <Trash2 size={16} />
+                              </button>
+                              <div className="h-32 w-full relative bg-yellow-100 group">
+                                  <img src={sub.imageUrl || 'https://images.unsplash.com/photo-1541888081622-1d5e5b3b1238?auto=format&fit=crop&w=800&q=80'} alt={sub.title} className="w-full h-full object-cover" />
+                                  <label className="absolute inset-0 bg-slate-900/0 hover:bg-slate-900/40 transition-colors flex items-center justify-center cursor-pointer group-hover:opacity-100">
+                                      <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-slate-900 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                          <ImageIcon size={14} /> Cambiar Foto
+                                      </span>
+                                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSubInitiativeImageUpload(sub.id, e)} />
+                                  </label>
+                              </div>
+                              <div className="p-5 flex-1 flex flex-col gap-4">
+                                  <input
+                                      type="text"
+                                      placeholder={`Fase ${index + 1}: Título`}
+                                      value={sub.title}
+                                      onChange={(e) => updateSubInitiative(sub.id, 'title', e.target.value)}
+                                      className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
+                                  />
+                                  <textarea
+                                      rows={2}
+                                      placeholder="Breve descripción de la sub-iniciativa"
+                                      value={sub.description}
+                                      onChange={(e) => updateSubInitiative(sub.id, 'description', e.target.value)}
+                                      className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm resize-none"
+                                  />
+                                  <div className="grid grid-cols-2 gap-3 mt-auto">
+                                      <div>
+                                          <label className="block text-[10px] font-bold text-yellow-700 uppercase mb-1 flex items-center gap-1"><DollarSign size={10}/> Presupuesto ($)</label>
+                                          <input
+                                              type="number"
+                                              value={sub.budget}
+                                              onChange={(e) => updateSubInitiative(sub.id, 'budget', parseInt(e.target.value) || 0)}
+                                              className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="block text-[10px] font-bold text-yellow-700 uppercase mb-1 flex items-center gap-1"><Calendar size={10}/> Cronograma</label>
+                                          <input
+                                              type="text"
+                                              placeholder="Ej: Q2 2026"
+                                              value={sub.timeline}
+                                              onChange={(e) => updateSubInitiative(sub.id, 'timeline', e.target.value)}
+                                              className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="block text-[10px] font-bold text-yellow-700 uppercase mb-1 flex items-center gap-1"><Tag size={10}/> Categoría</label>
+                                          <select
+                                              value={sub.category}
+                                              onChange={(e) => updateSubInitiative(sub.id, 'category', e.target.value)}
+                                              className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
+                                          >
+                                              {['Infraestructura', 'Social', 'Gestión', 'Seguridad'].map(c => (
+                                                  <option key={c} value={c}>{c}</option>
+                                              ))}
+                                          </select>
+                                      </div>
+                                      <div>
+                                          <label className="block text-[10px] font-bold text-yellow-700 uppercase mb-1 flex items-center gap-1"><AlertCircle size={10}/> Prioridad</label>
+                                          <select
+                                              value={sub.priority}
+                                              onChange={(e) => updateSubInitiative(sub.id, 'priority', e.target.value)}
+                                              className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
+                                          >
+                                              {['Baja', 'Media', 'Alta', 'Urgente'].map(p => (
+                                                  <option key={p} value={p}>{p}</option>
+                                              ))}
+                                          </select>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      ))}
+                    </div>
+                  ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {(!initiative.subInitiatives || initiative.subInitiatives.length === 0) ? (
+                          <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">Esta iniciativa no tiene fases ni sub-proyectos detallados.</div>
+                        ) : (
+                          initiative.subInitiatives.map((sub, idx) => (
+                             <div key={sub.id || idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                                <div className="h-32 w-full bg-slate-100">
+                                    <img src={sub.imageUrl || 'https://images.unsplash.com/photo-1541888081622-1d5e5b3b1238?auto=format&fit=crop&w=800&q=80'} alt={sub.title} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="p-5 flex-1 flex flex-col border-t border-slate-100">
+                                   <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                       <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600`}>
+                                           {sub.category}
+                                       </span>
+                                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${sub.priority === 'Urgente' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                         sub.priority === 'Alta' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-slate-100 text-slate-600'
+                                         }`}>
+                                         {sub.priority}
+                                       </span>
+                                   </div>
+                                   <h4 className="font-bold text-slate-800 text-sm mb-1">{sub.title}</h4>
+                                   <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4 flex-1">{sub.description}</p>
+                                   <div className="flex justify-between items-center border-t border-slate-50 pt-3 mt-auto">
+                                      <div>
+                                        <span className="text-[10px] block uppercase font-bold text-slate-400 tracking-wider">Presupuesto</span>
+                                        <span className="block text-sm font-bold text-emerald-600">${(sub.budget || 0).toLocaleString()}</span>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="text-[10px] flex items-center justify-end gap-1 uppercase font-bold text-slate-400 tracking-wider"><Calendar size={10} /> Plazo</span>
+                                        <span className="block text-sm font-bold text-blue-600">{sub.timeline}</span>
+                                      </div>
+                                   </div>
+                                </div>
+                             </div>
+                          ))
+                        )}
+                      </div>
+                  )}
+                </div>
+
               </div>
             </div>
 

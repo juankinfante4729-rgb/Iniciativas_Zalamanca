@@ -12,7 +12,18 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
+// Logger middleware
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    if (req.method !== 'GET') {
+        console.log('Body keys:', Object.keys(req.body));
+        if (req.body.initiative) console.log('Initiative ID in body:', req.body.initiative.id);
+    }
+    next();
+});
 
 // Routes
 app.get('/api/health', (req, res) => {
@@ -24,7 +35,7 @@ app.get('/api/initiatives', async (req, res) => {
         // Obtener iniciativas (mapeamos de minúsculas de DB a camelCase de Frontend)
         const { data, error: initError } = await supabase
             .from('initiatives')
-            .select('id, title, shortDescription:shortdescription, fullDescription:fulldescription, budget, timeline, priority, category, icon, imageUrl:imageurl')
+            .select('id, title, shortDescription:shortdescription, fullDescription:fulldescription, budget, timeline, priority, category, icon, imageUrl:imageurl, subInitiatives:sub_initiatives, responsable')
             .order('id', { ascending: true });
 
         if (initError) throw initError;
@@ -40,7 +51,9 @@ app.get('/api/initiatives', async (req, res) => {
             priority: i.priority,
             category: i.category,
             icon: i.icon,
-            imageUrl: i.imageurl || i.imageUrl
+            imageUrl: i.imageurl || i.imageUrl,
+            subInitiatives: i.subInitiatives || i.sub_initiatives || [],
+            responsable: i.responsable || 'Administración'
         }));
 
         // Obtener lastUpdated
@@ -60,48 +73,62 @@ app.get('/api/initiatives', async (req, res) => {
     }
 });
 
-app.post('/api/initiatives', async (req, res) => {
-    const { initiatives, lastUpdated } = req.body;
-    if (!initiatives) {
-        return res.status(400).json({ error: 'Missing initiatives data' });
+app.post('/api/initiatives/:id', async (req, res) => {
+    const { initiative, lastUpdated } = req.body;
+    if (!initiative) {
+        return res.status(400).json({ error: 'Missing initiative data' });
     }
 
     try {
-        // Mapeamos de camelCase de Frontend a minúsculas de DB para guardar
-        const dbInitiatives = initiatives.map(i => ({
-            id: i.id,
-            title: i.title,
-            shortdescription: i.shortDescription,
-            fulldescription: i.fullDescription,
-            budget: i.budget,
-            timeline: i.timeline,
-            priority: i.priority,
-            category: i.category,
-            icon: i.icon,
-            imageurl: i.imageUrl
-        }));
+        const dbInitiative = {
+            id: initiative.id,
+            title: initiative.title,
+            shortdescription: initiative.shortDescription,
+            fulldescription: initiative.fullDescription,
+            budget: initiative.budget,
+            timeline: initiative.timeline,
+            priority: initiative.priority,
+            category: initiative.category,
+            icon: initiative.icon,
+            imageurl: initiative.imageUrl,
+            sub_initiatives: initiative.subInitiatives || [],
+            responsable: initiative.responsable || 'Administración'
+        };
 
-        const { error: deleteError } = await supabase
+        const { error: upsertError } = await supabase
             .from('initiatives')
-            .delete()
-            .neq('id', 0); // Borra todo
+            .upsert(dbInitiative);
 
-        if (deleteError) throw deleteError;
+        if (upsertError) throw upsertError;
 
-        const { error: insertError } = await supabase
-            .from('initiatives')
-            .insert(dbInitiatives);
-
-        if (insertError) throw insertError;
-
-        // Actualizar lastUpdated
-        await supabase
-            .from('settings')
-            .upsert({ key: 'lastUpdated', value: lastUpdated });
+        if (lastUpdated) {
+            await supabase
+                .from('settings')
+                .upsert({ key: 'lastUpdated', value: lastUpdated });
+        }
 
         res.json({ success: true });
     } catch (err) {
         console.error('Save error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/initiatives/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { lastUpdated } = req.body;
+        
+        const { error } = await supabase.from('initiatives').delete().eq('id', id);
+        if (error) throw error;
+
+        if (lastUpdated) {
+            await supabase.from('settings').upsert({ key: 'lastUpdated', value: lastUpdated });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete error:', err);
         res.status(500).json({ error: err.message });
     }
 });

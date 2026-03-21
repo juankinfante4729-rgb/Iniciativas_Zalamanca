@@ -19,6 +19,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
   const [tempCategory, setTempCategory] = React.useState<Initiative['category']>('Infraestructura');
   const [tempDescription, setTempDescription] = React.useState('');
   const [tempTitle, setTempTitle] = React.useState('');
+  const [tempShortDescription, setTempShortDescription] = React.useState('');
   const [tempImageUrl, setTempImageUrl] = React.useState('');
   const [tempSubInitiatives, setTempSubInitiatives] = React.useState<any[]>([]);
   const [tempResponsable, setTempResponsable] = React.useState<Initiative['responsable']>('Administración');
@@ -30,6 +31,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
       setTempBudget(initiative.budget);
       setTempCategory(initiative.category);
       setTempDescription(initiative.fullDescription);
+      setTempShortDescription(initiative.shortDescription);
       setTempTitle(initiative.title);
       setTempImageUrl(initiative.imageUrl);
       setTempSubInitiatives(initiative.subInitiatives || []);
@@ -98,6 +100,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
     onUpdate({
       ...initiative,
       title: tempTitle,
+      shortDescription: tempShortDescription,
       priority: tempPriority,
       timeline: derivedTimeline,
       budget: derivedBudget,
@@ -185,6 +188,23 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
             {/* Content Scrollable */}
             <div className="p-6 md:p-8 overflow-y-auto">
               <div className="space-y-8">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Resumen Ejecutivo *</h3>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={tempShortDescription}
+                      onChange={(e) => setTempShortDescription(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      placeholder="Una frase corta que resuma el proyecto"
+                    />
+                  ) : (
+                    <p className="text-slate-600 font-medium text-lg leading-relaxed">
+                      {initiative.shortDescription}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Descripción y Alcance</h3>
                   {isEditing ? (

@@ -14,6 +14,7 @@ const App: React.FC = () => {
     const [selectedInitiative, setSelectedInitiative] = useState<Initiative | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Todos');
+    const [selectedPriority, setSelectedPriority] = useState('Todas');
     const [showReport, setShowReport] = useState(false);
     const [showNewModal, setShowNewModal] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -141,11 +142,12 @@ const App: React.FC = () => {
     const filteredInitiatives = useMemo(() => {
         return sortedInitiatives.filter(item => {
             const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
+            const matchesPriority = selectedPriority === 'Todas' || item.priority === selectedPriority;
             const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesCategory && matchesSearch;
+            return matchesCategory && matchesPriority && matchesSearch;
         });
-    }, [searchQuery, selectedCategory, sortedInitiatives]);
+    }, [searchQuery, selectedCategory, selectedPriority, sortedInitiatives]);
 
     return (
         <React.Fragment>
@@ -280,11 +282,19 @@ const App: React.FC = () => {
                                                         ${allInitiatives.reduce((acc, i) => acc + i.budget, 0).toLocaleString()}
                                                     </span>
                                                 </div>
-                                                <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 self-start">
-                                                    <span className="text-white font-bold flex items-center gap-1.5 text-xs">
-                                                        <FileText size={14} />
-                                                        {allInitiatives.length} Proyectos Totales
-                                                    </span>
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 self-end sm:self-start">
+                                                        <span className="text-white font-bold flex items-center gap-1.5 text-xs">
+                                                            <FileText size={14} />
+                                                            {allInitiatives.length} Proyectos Totales
+                                                        </span>
+                                                    </div>
+                                                    <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 self-end sm:self-start">
+                                                        <span className="text-white font-bold flex items-center gap-1.5 text-xs">
+                                                            <Layers size={14} />
+                                                            {allInitiatives.reduce((acc, curr) => acc + (curr.subInitiatives?.length || 0), 0)} Sub-iniciativas Totales
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -343,33 +353,48 @@ const App: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                                        <div className="flex items-center gap-1 bg-white border border-gray-200 p-1.5 rounded-xl shadow-sm">
-                                            <button
-                                                onClick={() => setViewMode('grid')}
-                                                className={`p-2 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-[#0B1A28] text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                                                title="Vista de cuadrícula"
-                                            >
-                                                <LayoutGrid size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => setViewMode('list')}
-                                                className={`p-2 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-[#0B1A28] text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                                                title="Vista de lista"
-                                            >
-                                                <List size={18} />
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar w-full sm:w-auto">
-                                            {['Todos', 'Infraestructura', 'Social', 'Gestión', 'Seguridad'].map((cat, idx) => (
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 w-full">
+                                            <div className="flex items-center gap-1 bg-white border border-gray-200 p-1.5 rounded-xl shadow-sm self-start sm:self-auto">
                                                 <button
-                                                    key={cat}
-                                                    onClick={() => setSelectedCategory(cat)}
-                                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat
-                                                        ? 'bg-[#0B1A28] text-white shadow-md'
-                                                        : 'bg-white text-slate-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                    onClick={() => setViewMode('grid')}
+                                                    className={`p-2 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-[#0B1A28] text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                    title="Vista de cuadrícula"
+                                                >
+                                                    <LayoutGrid size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setViewMode('list')}
+                                                    className={`p-2 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-[#0B1A28] text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                    title="Vista de lista"
+                                                >
+                                                    <List size={18} />
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar w-full sm:w-auto">
+                                                {['Todos', 'Infraestructura', 'Social', 'Gestión', 'Seguridad'].map((cat) => (
+                                                    <button
+                                                        key={cat}
+                                                        onClick={() => setSelectedCategory(cat)}
+                                                        className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat
+                                                            ? 'bg-[#0B1A28] text-white shadow-md'
+                                                            : 'bg-white text-slate-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                            }`}>
+                                                        {cat}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar w-full sm:justify-end">
+                                            {['Todas', 'Urgente', 'Alta', 'Media', 'Baja'].map((pri) => (
+                                                <button
+                                                    key={pri}
+                                                    onClick={() => setSelectedPriority(pri)}
+                                                    className={`px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border ${selectedPriority === pri
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm'
+                                                        : 'bg-white text-slate-500 border-gray-200 hover:bg-gray-50'
                                                         }`}>
-                                                    {cat}
+                                                    {pri === 'Todas' ? 'Cualquier Prioridad' : `Prioridad ${pri}`}
                                                 </button>
                                             ))}
                                         </div>

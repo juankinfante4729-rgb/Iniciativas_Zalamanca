@@ -11,7 +11,7 @@ export interface SubInitiative {
   imageUrl?: string;
 }
 
-export type Responsable = "Administración" | "Presidente" | "Coordinador Etapa 1" | "Coordinador Etapa 2" | "Coordinador Etapa 3" | "Coordinador Etapa 4";
+export type Responsable = "Administración" | "Presidente" | "Directiva" | "Copropietarios" | "Coordinador Etapa 1" | "Coordinador Etapa 2" | "Coordinador Etapa 3" | "Coordinador Etapa 4";
 
 export interface Initiative {
   id: number;

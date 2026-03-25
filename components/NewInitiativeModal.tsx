@@ -206,8 +206,24 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
                                 </select>
                             </div>
 
+                            {/* Budget */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                    <DollarSign size={12} /> Presupuesto ($)
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.budget === 0 ? '' : formData.budget}
+                                    onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
+                                    placeholder="Ej: 5000"
+                                    className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold ${hasSubInitiatives ? 'opacity-50 cursor-not-allowed' : 'text-slate-900'}`}
+                                    disabled={hasSubInitiatives}
+                                    title={hasSubInitiatives ? "El presupuesto se calcula con base en las sub-iniciativas." : "Presupuesto del proyecto principal"}
+                                />
+                            </div>
+
                             {/* Responsable */}
-                            <div className="md:col-span-2">
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1">
                                     <Layout size={12} /> Responsable
                                 </label>
@@ -216,7 +232,7 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
                                     onChange={(e) => setFormData({ ...formData, responsable: e.target.value as any })}
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold"
                                 >
-                                    {['Administración', 'Presidente', 'Coordinador Etapa 1', 'Coordinador Etapa 2', 'Coordinador Etapa 3', 'Coordinador Etapa 4'].map(r => (
+                                    {['Administración', 'Presidente', 'Directiva', 'Copropietarios', 'Coordinador Etapa 1', 'Coordinador Etapa 2', 'Coordinador Etapa 3', 'Coordinador Etapa 4'].map(r => (
                                         <option key={r} value={r}>{r}</option>
                                     ))}
                                 </select>

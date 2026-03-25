@@ -258,14 +258,29 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 sm:col-span-2">
+                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                        <DollarSign size={12} /> Presupuesto ($)
+                      </h3>
+                      <input
+                        type="number"
+                        value={tempBudget === 0 ? '' : tempBudget}
+                        onChange={(e) => setTempBudget(parseInt(e.target.value) || 0)}
+                        placeholder="Ej: 5000"
+                        className={`w-full bg-white border border-slate-300 rounded-lg px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-slate-500/20 shadow-sm ${hasSubInitiatives ? 'opacity-50 cursor-not-allowed text-slate-400' : 'text-slate-900'}`}
+                        disabled={hasSubInitiatives}
+                        title={hasSubInitiatives ? "El presupuesto se calcula con base en las sub-iniciativas." : "Presupuesto del proyecto principal"}
+                      />
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Responsable</h3>
                       <select
                         value={tempResponsable}
                         onChange={(e) => setTempResponsable(e.target.value as any)}
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 shadow-sm"
                       >
-                        {['Administración', 'Presidente', 'Coordinador Etapa 1', 'Coordinador Etapa 2', 'Coordinador Etapa 3', 'Coordinador Etapa 4'].map(r => (
+                        {['Administración', 'Presidente', 'Directiva', 'Copropietarios', 'Coordinador Etapa 1', 'Coordinador Etapa 2', 'Coordinador Etapa 3', 'Coordinador Etapa 4'].map(r => (
                           <option key={r} value={r}>{r}</option>
                         ))}
                       </select>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Initiative, Priority } from '../types';
 import { Icon } from './Icon';
 import { X, Calendar, DollarSign, AlertCircle, Trash2, Layout, Plus, Upload, Image as ImageIcon, Tag } from 'lucide-react';
+import { compressImage } from '../utils';
 
 interface Props {
   initiative: Initiative | null;
@@ -40,14 +41,15 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
     }
   }, [initiative]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedImage = await compressImage(file);
+        setTempImageUrl(compressedImage);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      }
     }
   };
 
@@ -65,14 +67,15 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
     setTempSubInitiatives([...tempSubInitiatives, newSub]);
   };
 
-  const handleSubInitiativeImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSubInitiativeImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateSubInitiative(id, 'imageUrl', reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedImage = await compressImage(file);
+        updateSubInitiative(id, 'imageUrl', compressedImage);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      }
     }
   };
 
@@ -288,7 +291,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                   {isEditing ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {tempSubInitiatives.length === 0 && (
-                            <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">No hay fases o sub-iniciativas asociadas.</div>
+                            <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">No hay iniciativas o sub-proyectos asociados.</div>
                         )}
                         {tempSubInitiatives.map((sub, index) => (
                           <div key={sub.id} className="bg-yellow-50/50 rounded-2xl border border-yellow-200 shadow-sm overflow-hidden relative group hover:shadow-md transition-shadow flex flex-col">
@@ -312,7 +315,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                               <div className="p-5 flex-1 flex flex-col gap-4">
                                   <input
                                       type="text"
-                                      placeholder={`Fase ${index + 1}: Título`}
+                                      placeholder={`Iniciativa ${index + 1}: Título`}
                                       value={sub.title}
                                       onChange={(e) => updateSubInitiative(sub.id, 'title', e.target.value)}
                                       className="w-full px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500/20 text-sm font-bold"
@@ -376,7 +379,7 @@ export const ProposalModal: React.FC<Props> = ({ initiative, onClose, onUpdate, 
                   ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {(!initiative.subInitiatives || initiative.subInitiatives.length === 0) ? (
-                          <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">Esta iniciativa no tiene fases ni sub-proyectos detallados.</div>
+                          <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">Esta iniciativa principal no tiene sub-iniciativas.</div>
                         ) : (
                           initiative.subInitiatives.map((sub, idx) => (
                              <div key={sub.id || idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">

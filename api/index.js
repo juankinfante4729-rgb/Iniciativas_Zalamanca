@@ -95,16 +95,21 @@ app.post('/api/initiatives/:id', async (req, res) => {
             responsable: initiative.responsable || 'Administración'
         };
 
+        console.log('Upserting initiative...');
         const { error: upsertError } = await supabase
             .from('initiatives')
             .upsert(dbInitiative);
 
         if (upsertError) throw upsertError;
+        console.log('Initiative upserted successfully.');
 
         if (lastUpdated) {
-            await supabase
+            console.log('Upserting settings...');
+            const { error: settingsError } = await supabase
                 .from('settings')
                 .upsert({ key: 'lastUpdated', value: lastUpdated });
+            if (settingsError) throw settingsError;
+            console.log('Settings upserted successfully.');
         }
 
         res.json({ success: true });

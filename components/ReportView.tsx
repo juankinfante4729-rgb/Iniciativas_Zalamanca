@@ -116,6 +116,29 @@ export const ReportView: React.FC<Props> = ({ initiatives, onClose }) => {
                                         <div className="mt-2 flex items-center gap-2 text-[9px] font-bold text-slate-400">
                                             <Calendar size={10} /> {item.timeline}
                                         </div>
+                                        
+                                        {/* Sub-Initiatives Nested Block */}
+                                        {item.subInitiatives && item.subInitiatives.length > 0 && (
+                                            <div className="mt-4 pt-3 border-t border-slate-100/60 max-w-md">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-emerald-700/70 mb-2">Iniciativas Integradas:</p>
+                                                <ul className="space-y-3">
+                                                    {item.subInitiatives.map((sub, idx) => (
+                                                        <li key={sub.id || idx} className="pl-3 border-l-2 border-emerald-500/30">
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex justify-between items-start gap-3">
+                                                                    <h5 className="text-[11px] font-bold text-slate-800 leading-tight flex-1">{sub.title}</h5>
+                                                                    <span className="text-[10px] font-black text-slate-700 whitespace-nowrap">${(Number(sub.budget) || 0).toLocaleString()}</span>
+                                                                </div>
+                                                                {sub.description && (
+                                                                    <p className="text-[10px] text-slate-500 leading-relaxed">{sub.description}</p>
+                                                                )}
+                                                                <span className="block text-[8px] text-slate-400 uppercase tracking-widest mt-0.5">{sub.timeline}</span>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="py-5 px-2">
                                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded leading-none">

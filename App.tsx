@@ -143,8 +143,9 @@ const App: React.FC = () => {
         return sortedInitiatives.filter(item => {
             const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
             const matchesPriority = selectedPriority === 'Todas' || item.priority === selectedPriority;
-            const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
+            const q = searchQuery.toLowerCase();
+            const matchesSearch = (item.title || '').toLowerCase().includes(q) ||
+                (item.shortDescription || '').toLowerCase().includes(q);
             return matchesCategory && matchesPriority && matchesSearch;
         });
     }, [searchQuery, selectedCategory, selectedPriority, sortedInitiatives]);
@@ -447,7 +448,7 @@ const App: React.FC = () => {
                                                         <div className="flex items-center gap-5 mb-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                                             <div className="flex items-center gap-1.5" title="Sub-iniciativas">
                                                                 <Layers size={14} className="text-[#52A37D]" />
-                                                                {item.subInitiatives?.length || 0} Fases
+                                                                {item.subInitiatives?.length || 0} Iniciativas
                                                             </div>
                                                             <div className="flex items-center gap-1.5" title="Implementación Máxima">
                                                                 <Calendar size={14} className="text-[#0B1A28]/50" />
@@ -456,7 +457,7 @@ const App: React.FC = () => {
                                                         </div>
 
                                                         <div className="flex items-center justify-between pt-5 border-t border-gray-50 mt-auto">
-                                                            <span className="text-lg font-extrabold text-[#0B1A28]">${item.budget.toLocaleString()}</span>
+                                                            <span className="text-lg font-extrabold text-[#0B1A28]">${(item.budget || 0).toLocaleString()}</span>
                                                             <span className="text-xs font-bold text-[#52A37D] flex items-center gap-1 group-hover:translate-x-1 transition-transform bg-[#E6F5EC] px-3 py-1.5 rounded-lg">
                                                                 Detalles <ArrowUpRight size={14} />
                                                             </span>
@@ -509,7 +510,7 @@ const App: React.FC = () => {
                                                             <div className="flex flex-row sm:flex-col gap-4 sm:gap-2">
                                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                                                     <Layers size={14} className="text-[#52A37D]" />
-                                                                    {item.subInitiatives?.length || 0} Fases
+                                                                    {item.subInitiatives?.length || 0} Iniciativas
                                                                 </div>
                                                                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                                                     <Calendar size={14} className="text-[#0B1A28]/50" />
@@ -518,7 +519,7 @@ const App: React.FC = () => {
                                                             </div>
                                                             
                                                             <div className="flex flex-col items-end gap-3 sm:mt-4">
-                                                                <span className="text-2xl font-extrabold text-[#0B1A28]">${item.budget.toLocaleString()}</span>
+                                                                <span className="text-2xl font-extrabold text-[#0B1A28]">${(item.budget || 0).toLocaleString()}</span>
                                                                 <span className="hidden sm:flex text-xs font-bold text-[#52A37D] items-center gap-1 group-hover:translate-x-1 transition-transform bg-[#E6F5EC] px-4 py-2 rounded-xl">
                                                                     Ver Detalles <ArrowUpRight size={14} />
                                                                 </span>

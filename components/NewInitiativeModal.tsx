@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Initiative, Priority } from '../types';
 import { X, Save, Layout, DollarSign, Calendar, Tag, AlertCircle, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { compressImage } from '../utils';
 
 interface Props {
     onClose: () => void;
@@ -23,14 +24,15 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
         responsable: 'Administración'
     });
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData({ ...formData, imageUrl: reader.result as string });
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressedImage = await compressImage(file);
+                setFormData({ ...formData, imageUrl: compressedImage });
+            } catch (error) {
+                console.error("Error compressing image:", error);
+            }
         }
     };
 
@@ -64,14 +66,15 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
         });
     };
 
-    const handleSubInitiativeImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSubInitiativeImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                updateSubInitiative(id, 'imageUrl', reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressedImage = await compressImage(file);
+                updateSubInitiative(id, 'imageUrl', compressedImage);
+            } catch (error) {
+                console.error("Error compressing image:", error);
+            }
         }
     };
 
@@ -256,7 +259,7 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                                     {formData.subInitiatives?.length === 0 && (
-                                        <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">No hay fases o sub-iniciativas asociadas.</div>
+                                        <div className="md:col-span-2 text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-xl">No hay iniciativas asociadas.</div>
                                     )}
                                     {formData.subInitiatives?.map((sub, index) => (
                                         <div key={sub.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative group hover:shadow-md transition-shadow flex flex-col">
@@ -280,7 +283,7 @@ export const NewInitiativeModal: React.FC<Props> = ({ onClose, onSave }) => {
                                             <div className="p-5 flex-1 flex flex-col gap-4">
                                                 <input
                                                     type="text"
-                                                    placeholder={`Fase ${index + 1}: Título`}
+                                                    placeholder={`Iniciativa ${index + 1}: Título`}
                                                     value={sub.title}
                                                     onChange={(e) => updateSubInitiative(sub.id, 'title', e.target.value)}
                                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 text-sm font-bold"
